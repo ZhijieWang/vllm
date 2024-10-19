@@ -27,7 +27,7 @@ from vllm.entrypoints.openai.serving_engine import (BaseModelPath,
                                                     OpenAIServing,
                                                     PromptAdapterPath)
 from vllm.logger import init_logger
-from vllm.outputs import RequestOutput
+from vllm.outputs import CompletionOutput, RequestOutput
 from vllm.sampling_params import BeamSearchParams, SamplingParams
 from vllm.sequence import Logprob
 from vllm.tracing import (contains_trace_headers, extract_trace_headers,
@@ -344,6 +344,8 @@ class OpenAIServingCompletion(OpenAIServing):
                                 logprobs=logprobs,
                                 finish_reason=finish_reason,
                                 stop_reason=stop_reason,
+                                token_ids=delta_token_ids,
+                                powv=output.powv
                             )
                         ])
                     if include_continuous_usage:

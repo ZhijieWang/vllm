@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from typing import Sequence as GenericSequence
 from typing import Union
 
@@ -37,6 +37,7 @@ class CompletionOutput:
     finish_reason: Optional[str] = None
     stop_reason: Union[int, str, None] = None
     lora_request: Optional[LoRARequest] = None
+    powv: Optional[int] = None
 
     def finished(self) -> bool:
         return self.finish_reason is not None
@@ -101,6 +102,7 @@ class RequestOutput:
         lora_request: Optional[LoRARequest] = None,
         encoder_prompt: Optional[str] = None,
         encoder_prompt_token_ids: Optional[List[int]] = None,
+        powv: Optional[int] = None
     ) -> None:
         self.request_id = request_id
         self.prompt = prompt
@@ -112,6 +114,7 @@ class RequestOutput:
         self.lora_request = lora_request
         self.encoder_prompt = encoder_prompt
         self.encoder_prompt_token_ids = encoder_prompt_token_ids
+        self.powv: Optional[int] = powv
 
     @classmethod
     def from_seq_group(cls, seq_group: SequenceGroup,
@@ -205,6 +208,7 @@ class RequestOutput:
                 output.finish_reason = SequenceStatus.get_finished_reason(
                     seq.status)
                 output.stop_reason = seq.stop_reason
+                output.powv = seq_group.powv
 
             else:
                 output = CompletionOutput(
@@ -213,7 +217,7 @@ class RequestOutput:
                     seq.get_cumulative_logprob() if include_logprobs else None,
                     output_logprobs,
                     SequenceStatus.get_finished_reason(seq.status),
-                    seq.stop_reason)
+                    seq.stop_reason, powv=seq_group.powv)
 
             outputs.append(output)
 
@@ -272,11 +276,12 @@ class EmbeddingRequestOutput:
     """
 
     def __init__(self, request_id: str, outputs: "EmbeddingOutput",
-                 prompt_token_ids: List[int], finished: bool):
+                 prompt_token_ids: List[int], finished: bool, powv: Optional[int]=None):
         self.request_id = request_id
         self.prompt_token_ids = prompt_token_ids
         self.finished = finished
         self.outputs = outputs
+        self.powv = powv
 
     @classmethod
     def from_seq_group(cls,
@@ -288,7 +293,7 @@ class EmbeddingRequestOutput:
         prompt_token_ids = seq_group.prompt_token_ids
         finished = seq_group.is_finished()
 
-        return cls(seq_group.request_id, output, prompt_token_ids, finished)
+        return cls(seq_group.request_id, output, prompt_token_ids, finished, seq_group.powv)
 
     def __repr__(self):
         """

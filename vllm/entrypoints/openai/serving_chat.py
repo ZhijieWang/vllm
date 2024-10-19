@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from typing import (AsyncGenerator, AsyncIterator, Callable, Dict, Final, List,
+from typing import (AsyncGenerator, AsyncIterator, Callable, Coroutine, Dict, Final, List,
                     Optional)
 from typing import Sequence as GenericSequence
 from typing import Union
@@ -87,6 +87,7 @@ class OpenAIServingChat(OpenAIServing):
                 raise TypeError("Error: --enable-auto-tool-choice requires "
                                 f"tool_parser:'{tool_parser}' which has not "
                                 "been registered") from e
+
 
     async def create_chat_completion(
         self,
@@ -396,6 +397,7 @@ class OpenAIServingChat(OpenAIServing):
                                         index=i,
                                         delta=DeltaMessage(
                                             content=last_msg_content),
+                                        token_ids=res.prompt_token_ids,
                                         logprobs=None,
                                         finish_reason=None))
                                 chunk = ChatCompletionStreamResponse(
@@ -497,6 +499,8 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
+                            token_ids=output.token_ids,
+                            powv=output.powv,
                             logprobs=logprobs,
                             finish_reason=None)
 
@@ -544,6 +548,8 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
+                            token_ids=output.token_ids,
+                            powv=output.powv,
                             logprobs=logprobs,
                             finish_reason=output.finish_reason
                             if not auto_tools_called else "tool_calls",
